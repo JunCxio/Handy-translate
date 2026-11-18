@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Handy-translate · 游戏翻译工作台</title><link rel="icon" href="/icon.svg" type="image/svg+xml"><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script><script src="/images.js" defer></script></head>
+<body>
+<header class="topbar">
+  <div class="brand" aria-label="Handy-translate"><img class="brand-icon" src="/icon.svg" width="33" height="33" alt=""><strong>Handy-translate</strong><span>游戏翻译工作台</span></div>
+  <div class="local-status"><span class="dot"></span>桌面版<span class="version">0.6.4</span></div>
+</header>
+<main>
+  <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+  <section id="welcome" class="welcome" aria-labelledby="welcome-title">
+    <div class="drop-zone">
+      <svg class="drop-icon" viewBox="0 0 80 80" aria-hidden="true"><path d="M19 10h28l14 14v46H19zM47 10v15h14M40 35v22m-8-8 8 8 8-8"/></svg>
+      <h1 id="welcome-title">将 Game.exe 拖到这里</h1>
+      <p>也可以拖入游戏文件夹，识别后进入翻译工作台。</p>
+      <button id="welcome-pick" type="button">选择游戏程序</button>
+      <span class="drop-hint">自动识别源语言 · 已保存的译文会继续保留</span>
+    </div>
+    <p class="welcome-support">支持 RPG Maker MV / MZ，以及保留可读脚本的 Ren’Py 游戏。</p>
+  </section>
+  <section id="workbench" class="workbench" hidden>
+  <section class="game-section" aria-labelledby="game-heading">
+    <div class="game-title">
+      <h1 id="game-heading">选择要翻译的游戏</h1>
+      <p id="game-description">加载原文，连接翻译服务，然后将译文安装到游戏。</p>
+      <div class="game-actions"><span id="engine-badge" class="badge" hidden></span><button type="button" id="change-game" class="secondary">更换游戏</button></div>
+    </div>
+    <form id="game-form">
+
+      <div class="languages">
+        <div class="language-field"><label for="source-language">源语言</label><select id="source-language" aria-label="源语言"></select><input id="custom-source-language" aria-label="源语言代码" maxlength="64" placeholder="例如 ja、en" hidden></div>
+        <svg class="language-arrow" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-5-5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+        <div class="language-field target-field"><label for="target-language">目标语言</label><select id="target-language" aria-label="目标语言"></select><input id="custom-target-language" aria-label="目标语言代码" maxlength="64" placeholder="例如 zh-CN、fr" hidden></div>
+        <button type="button" id="apply-languages" class="secondary" hidden>应用语言</button><p id="language-status" role="status" aria-live="polite">源语言在本地识别，无需调用翻译服务。</p>
+      </div>
+      <details id="path-settings" class="path-settings"><summary>游戏路径与重新扫描</summary>
+      <label for="game-path">游戏目录或主程序路径</label>
+      <div class="path-row"><input id="game-path" placeholder="例如 D:\Games\游戏名称\Game.exe" required><button type="button" id="pick-button" class="secondary">选择程序</button><button id="scan-button" type="submit">重新扫描</button></div></details>
+    </form>
+    <button id="launch-button" class="secondary game-launch" type="button" disabled><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>启动游戏</button>
+  </section>
+  <div class="workspace-navigation">
+  <nav class="workspace-modes" aria-label="翻译模块"><button id="text-mode" type="button" aria-pressed="true">文本翻译</button><button id="image-mode" type="button" aria-pressed="false">图片素材<span>可选</span></button><p>文本与图片分别处理、分别安装。</p></nav>
+  <ol id="text-workflow" class="workflow" aria-label="翻译流程">
+    <li id="stage-load"><span class="step-number">1</span><div><strong>加载游戏</strong><span id="stage-load-status">提取原文与识别语言</span></div></li>
+    <li id="stage-translate"><span class="step-number">2</span><div><strong>翻译文本</strong><span id="stage-translate-status">完成批次自动保存</span></div></li>
+    <li id="stage-install"><span class="step-number">3</span><div><strong>安装到游戏</strong><span id="stage-install-status">安装后重启游戏生效</span></div></li>
+  </ol>
+  </div>
+  <div id="text-workspace" class="workspace">
+    <aside class="service-panel">
+      <div class="section-title"><h2>翻译设置</h2><span id="service-readiness">选择服务与模型</span></div>
+      <form id="service-form"><div class="service-scroll">
+        <label for="service-preset">翻译服务</label><select id="service-preset"><option value="custom">自定义服务</option><option value="deepseek">DeepSeek</option><option value="codex">Codex（本机配置）</option><option value="claude_code">Claude Code（本机配置）</option></select>
+        <div id="model-field"><label for="model-presets">模型</label><div class="model-row"><select id="model-presets" aria-label="选择模型"><option value="">选择模型</option><option value="__custom__">手动填写模型名称</option></select><button type="button" id="fetch-models" class="secondary">获取模型</button></div><div id="custom-model-field" hidden><label for="model">自定义模型名称</label><input id="model" placeholder="与服务商提供的名称一致" autocomplete="off" spellcheck="false"></div></div>
+        <details id="connection-settings" class="connection-settings" open><summary>连接与密钥</summary>
+        <div id="local-config-field" hidden><button id="read-local-config" type="button" class="secondary full">重新读取本机配置</button><small>直接读取本机 API 配置；下次打开自动读取密钥，无需另存一份。更改地址或认证方式后请重新读取并保存。</small></div>
+        <label for="provider">接口类型</label><select id="provider"><option value="openai">OpenAI Chat Completions</option><option value="responses">OpenAI Responses</option><option value="anthropic">Anthropic Messages</option><option value="deepl">DeepL</option><option value="libretranslate">LibreTranslate</option></select>
+        <label for="base-url">服务地址</label><input id="base-url" type="url" value="https://api.openai.com/v1" required spellcheck="false"><small id="url-hint">填写服务商提供的基础地址，通常以 /v1 结尾。</small>
+        <div id="auth-field" hidden><label for="auth-mode">认证方式</label><select id="auth-mode"><option value="api_key">API Key（x-api-key）</option><option value="bearer">Token（Bearer）</option></select></div>
+        <label for="api-key">API 密钥<span id="key-hint" class="optional">本地服务可留空</span></label><input id="api-key" type="password" placeholder="填写服务商提供的密钥" autocomplete="off" spellcheck="false">
+        <label id="remember-key-field" class="check-label"><input id="remember-key" type="checkbox">使用 Windows 加密记住密钥</label>
+        </details>
+        <div class="config-actions"><button id="test-service" class="secondary" type="button">测试连接</button><button id="save-settings" class="secondary" type="button">保存设置</button></div>
+        <small id="config-status" role="status" aria-live="polite">地址和模型可保存，密钥仅在勾选后加密保存。测试连接会发送一条测试文本。</small>
+        <details class="speed-settings"><summary id="speed-summary">翻译速度：4 个并发，每批 48 条</summary><div class="speed-fields"><label>并发请求<input id="concurrency" type="number" min="1" max="8" value="4" required></label><label>每批条数<input id="batch-size" type="number" min="1" max="96" value="48" required></label></div><small>并发越高越依赖服务额度。出现限流或格式错误时，适当降低这两项。</small></details>
+        <label class="check-label"><input id="use-cache" type="checkbox" checked>复用相同原文的翻译缓存</label><small>可跨游戏复用，按语言、引擎和术语表区分。遇到语境歧义可关闭；选中重译始终跳过缓存。</small>
+        </div><div class="service-actions"><p>已完成的译文自动保存，无需先安装。</p><button id="translate-button" class="full" type="submit" disabled>开始翻译</button><button id="stop-button" class="secondary full" type="button" hidden>完成当前请求后停止</button></div>
+      </form>
+    </aside>
+    <section class="text-panel" aria-labelledby="text-heading">
+      <div class="translation-heading"><div><h2 id="text-heading">原文与译文</h2><p id="counts">加载游戏后，原文会显示在这里。</p></div><div class="document-actions"><button class="quiet" id="glossary-button" disabled>术语表</button><button class="quiet" id="review-button" disabled>检查译文</button><button class="quiet" id="import-button" disabled>导入</button><button class="quiet" id="export-button" disabled>导出</button><input id="import-file" type="file" accept="application/json,.json" hidden></div></div>
+      <div class="progress-area" id="progress-area" hidden><progress id="progress" max="1" value="0" aria-label="翻译进度"></progress><div><span id="progress-text"></span><span id="progress-number"></span></div></div>
+      <details id="coverage-details" class="coverage-details"><summary id="coverage-title">翻译进度仅统计已提取的文本</summary><div><p>图片、按钮贴图和教程截图里的文字不计入进度，需要另外识别并处理图片。插件参数和动态生成的文本也可能需要专门适配。</p><p id="installation-status">生成译文后还需安装，并完全退出、重启游戏。</p></div></details>
+      <div class="filters"><label class="search-label"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg><input id="search" placeholder="搜索原文或译文" aria-label="搜索原文或译文"></label><select id="filter" aria-label="筛选翻译状态"><option value="">全部文本</option><option value="pending">未翻译</option><option value="translated">已翻译</option><option value="failed">处理失败</option><option value="review">待人工检查</option></select><button id="filter-pending" class="filter-chip" type="button">待翻译</button><button id="filter-failed" class="filter-chip" type="button" hidden>失败</button></div>
+      <div class="selection-bar"><label><input id="select-page" type="checkbox">选择本页</label><span id="selection-count" role="status">已选 0 条</span><button id="clear-selection" type="button" class="quiet" disabled>取消选择</button><button id="retranslate-button" type="button" class="secondary" disabled>重译所选</button></div>
+      <div id="empty" class="empty"><svg viewBox="0 0 80 80" aria-hidden="true"><path d="M18 14h31l13 13v39H18zM49 14v14h13M28 39h24M28 48h18M28 57h12"/></svg><h3>先加载一个游戏</h3><p>选择游戏主程序，或在上方填写游戏目录。<br>翻译和安装操作会在加载原文后启用。</p></div>
+      <div id="table-wrap" hidden><table><thead><tr><th scope="col">原文</th><th scope="col">译文<span>可直接编辑并保存</span></th></tr></thead><tbody id="text-rows"></tbody></table><div class="pagination"><span id="page-info"></span><div><button id="previous" class="quiet">上一页</button><button id="next" class="quiet">下一页</button></div></div></div>
+      <div class="install-bar"><div><strong id="install-heading">将译文带回游戏</strong><p id="install-hint">适配器安装在游戏目录，可随时卸载。</p></div><div class="install-actions"><button id="restore-button" type="button" class="secondary" hidden>恢复游戏内译文</button><button id="uninstall-button" class="quiet" hidden>卸载适配器</button><button id="install-button" disabled>安装译文</button></div></div>
+    </section>
+  </div>
+  <section id="image-workspace" class="image-workspace" aria-labelledby="image-heading" hidden>
+    <div class="image-heading"><div><h2 id="image-heading">图片素材翻译</h2><p>可逐步处理所选图片，也可一键处理全部候选。文本翻译不会触发图片处理。</p></div><button id="image-scan" type="button">扫描引用素材</button></div>
+    <div class="image-topline"><p id="image-summary">尚未扫描素材。此模块首版支持 RPG Maker MV / MZ。</p><div><button id="image-trace" class="quiet" type="button">开启素材记录</button><button id="image-settings" class="secondary" type="button">翻译服务设置</button></div></div>
+    <details class="image-explanation"><summary>如何筛选素材与保护原图</summary><p>扫描游戏数据和插件参数中的图片名称引用，不会自动识别全部图片。“加载过”来自主动开启的本地记录，需要重启游戏、经过相关场景后重新扫描；加载过不等于实际显示，未记录也不代表未使用。</p><p>生成译图采用文字区域的底色覆盖，适合纯色按钮和说明框。复杂背景请外部编辑后导入同尺寸 PNG。安装只增加独立图片插件与译图，不覆盖原图；还原素材不影响文本译文。</p></details>
+    <p id="image-scan-warnings" class="image-help" role="status" hidden></p>
+    <div id="image-progress-area" class="image-progress-area" hidden><progress id="image-progress" max="1" value="0" aria-label="图片处理进度"></progress><span id="image-progress-text" role="status" aria-live="polite"></span><button id="image-stop" type="button" class="secondary" hidden>完成当前请求后停止</button></div>
+    <div class="image-columns">
+      <aside class="image-list-panel"><label for="image-search">筛选素材名称</label><input id="image-search" placeholder="例如 home_setumei"><label class="check-label"><input id="image-loaded-only" type="checkbox">仅看运行时加载过的素材</label><div class="image-selection"><button id="image-select-visible" type="button" class="quiet">选择当前列表</button><button id="image-clear-selection" type="button" class="quiet">清空</button><span id="image-selection-count">已选 0 张</span></div><label class="check-label"><input id="image-text-only" type="checkbox">仅看已检出文字的素材</label><div id="image-list" class="image-list" aria-label="候选图片"></div></aside>
+      <div class="image-detail"><p id="image-empty" class="image-empty">扫描后选择一张图片，查看原图和文字区域。</p><div id="image-editor" hidden><h3 id="image-path"></h3><p id="image-references"></p><p id="image-error" class="entry-error" role="alert" hidden></p><div class="image-previews"><figure><figcaption>原图</figcaption><img id="image-source" alt="所选游戏原图"></figure><figure><figcaption>译图预览</figcaption><img id="image-rendered" alt="所选素材的译图" hidden><p id="image-rendered-empty">生成或导入译图后显示</p></figure></div><div class="image-region-heading"><h3>文字区域</h3><button id="image-add-region" class="quiet" type="button">添加区域</button></div><p class="image-help">核对识别结果和覆盖范围，可修改原文、译文、矩形与颜色。保存后再生成译图。</p><div id="image-regions"></div><div class="image-edit-actions"><span id="image-edit-status" role="status"></span><button id="image-save" class="secondary" type="button">保存区域</button><button id="image-import" class="secondary" type="button">导入替换 PNG</button><input id="image-import-file" type="file" accept="image/png,.png" hidden></div></div></div>
+    </div>
+    <div class="image-process"><div><label for="image-ocr-mode">所选图片的识别方式</label><select id="image-ocr-mode"><option value="local" selected>本地 Windows OCR（推荐）</option><option value="vision">当前视觉模型（按需付费）</option></select><p id="image-ocr-hint">优先本地识别，不上传图片；只翻译去重和缓存检查后仍缺少译文的文字。</p><div id="image-ocr-package" class="image-ocr-package" hidden><p id="image-ocr-status" role="status" aria-live="polite"></p><small>从 Windows 更新下载系统组件，需要联网；安装时按需请求管理员授权，不消耗模型用量。</small><div><button id="image-ocr-check" class="quiet" type="button">重新检测</button><button id="image-ocr-install" class="secondary" type="button" hidden>安装日语 OCR 包</button></div></div><p id="image-batch-hint">一键处理先识别全部候选，再跨图片汇总去重、查缓存、批量翻译；无字图片跳过，已有译文保留。单步操作仅处理勾选项。</p><label class="check-label"><input id="image-cache" type="checkbox" checked>复用图片识别和相同原文的翻译缓存</label></div><div class="image-process-buttons"><button id="image-auto" type="button">一键处理全部候选</button><button id="image-recognize" class="secondary" type="button">1. 识别文字</button><button id="image-translate" class="secondary" type="button">2. 翻译文字</button><button id="image-render" type="button">3. 生成译图</button></div></div>
+    <div class="install-bar image-install"><div><strong>单独安装图片素材</strong><p id="image-install-status">图片处理结果会自动保存，安装后重启游戏生效。</p></div><div class="install-actions"><button id="image-uninstall" class="quiet" type="button" hidden>还原素材</button><button id="image-install" type="button">安装全部已生成译图</button></div></div>
+  </section>
+  <details id="game-warnings" class="game-warnings" hidden><summary>当前游戏的支持范围与显示说明</summary><ul id="warning-list"></ul></details>
+  </section>
+  <footer><span>译文保存在工具目录的 data 文件夹。请保留该文件夹以便继续翻译。</span><span>Handy-translate / 本地工作台</span></footer>
+</main>
+<div id="drop-overlay" class="drop-overlay" hidden><strong>松开以加载游戏</strong><span>支持游戏主程序或游戏文件夹</span></div>
+<dialog id="glossary-dialog" aria-labelledby="glossary-title"><form id="glossary-form"><h2 id="glossary-title">当前游戏术语表</h2><p>固定角色名、地名和技能名。每行一项，以等号分隔原文和译文。</p><label for="glossary-text">术语原文 = 固定译法</label><textarea id="glossary-text" rows="10" spellcheck="false" placeholder="結衣 = 结衣&#10;Potion = 药水"></textarea><small>最多 200 项，区分大小写，较长术语优先。仅影响之后的翻译，不会自动改写已保存的译文。</small><p id="glossary-error" class="entry-error" role="alert" hidden></p><div class="dialog-actions"><button id="glossary-cancel" type="button" class="secondary">取消</button><button id="glossary-save" type="submit">保存术语表</button></div></form></dialog>
+<dialog id="retranslate-dialog" aria-labelledby="retranslate-title"><form id="retranslate-form"><h2 id="retranslate-title">重译所选文本</h2><p id="retranslate-summary"></p><label for="retranslate-instructions">补充翻译要求（可选）</label><textarea id="retranslate-instructions" rows="4" maxlength="2000" placeholder="例如：对白更自然，保留敬语，避免直译。"></textarea><small>使用当前服务、模型和已保存的术语表，始终跳过缓存。成功后替换已保存译文，失败时保留原译文。补充要求仅支持大模型接口。</small><p id="retranslate-error" class="entry-error" role="alert" hidden></p><div class="dialog-actions"><button id="retranslate-cancel" type="button" class="secondary">取消</button><button id="retranslate-submit" type="submit">开始重译</button></div></form></dialog>
+</body></html>

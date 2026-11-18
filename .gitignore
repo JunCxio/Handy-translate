@@ -1,0 +1,4 @@
+/target/
+/data/
+*.tmp
+__pycache__/
